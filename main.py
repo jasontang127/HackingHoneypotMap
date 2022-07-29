@@ -66,10 +66,6 @@ computer = 'localhost'
 
 logtype = 'Security'
 
-# begin_sec = time.time()
-
-# begin_time = time.strftime('%H:%M:%S  ', time.localtime(begin_sec))
-
 begin_time = date.today()
 print(begin_time)
 # open event log
@@ -80,7 +76,6 @@ while True:
     hand = win32evtlog.OpenEventLog(computer, logtype)
     events = win32evtlog.ReadEventLog(hand, flags, 0, 8192)
     print("Getting batch of logs " + str(len(events)))
-
     if len(events) > 0:
         maxID = events[0].RecordNumber
         try:
@@ -94,6 +89,7 @@ while True:
             reachedMax = maxID <= prevMaxID
             if reachedMax is False:
                 maxIDFile = open("maxIDFile.txt", "w")
+                jsonLogFile = open("jsonLogFile.txt", "a")
                 maxIDFile.write(str(maxID))
                 maxIDFile.close()
 
@@ -106,28 +102,28 @@ while True:
                 break
             else:
                 if item.EventID == 4625:
-                    # print(f"Event time generated: " + str(item.TimeGenerated))
-                    # # if int(str(begin_time - item.TimeGenerated.date()).split()[0]) > 7:
-                    # #     print("This happened within the last week!")
-                    # print("Time since today: " + str(begin_time - item.TimeGenerated.date()))
-                    # print(f"Event computer name: " + str(item.ComputerName))
-                    # ip = str(item.StringInserts[19])
-                    # print(f"IP address: " + ip)
-                    # response = requests.get(
-                    #     "https://ipgeolocation.abstractapi.com/v1/?api_key=" + api_key + "&ip_address=" + ip)
-                    # data_list = json.loads(response.content)
-                    # country = data_list["country"]
-                    # longitude = data_list["longitude"]
-                    # latitude = data_list["latitude"]
-                    # print("Country: " + country)
-                    # print("Longitude: " + str(longitude))
-                    # print("Latitude: " + str(latitude))
-                    # print()
-                    # json_file = json.dumps({"IP address": ip, "Country": country, "Longitude": longitude, "Latitude": latitude})
-                    # print(json_file)
+                    print(f"Event time generated: " + str(item.TimeGenerated))
+                    print("Time since today: " + str(begin_time - item.TimeGenerated.date()))
+                    print(f"Event computer name: " + str(item.ComputerName))
+                    ip = str(item.StringInserts[19])
+                    print(f"IP address: " + ip)
+                    response = requests.get(
+                        "https://ipgeolocation.abstractapi.com/v1/?api_key=" + api_key + "&ip_address=" + ip)
+                    data_list = json.loads(response.content)
+                    country = data_list["country"]
+                    longitude = data_list["longitude"]
+                    latitude = data_list["latitude"]
+                    print("Country: " + str(country))
+                    print("Longitude: " + str(longitude))
+                    print("Latitude: " + str(latitude))
+                    print()
+                    json_file = json.dumps({"IP address": ip, "Country": country, "Longitude": longitude, "Latitude": latitude})
+                    print(json_file)
+                    jsonLogFile.write(str(json_file) + "\n")
                     time.sleep(1)
                     print("Slept for 1 seconds")
         events = win32evtlog.ReadEventLog(hand, flags, 0, 8192)
+    jsonLogFile.close()
     time.sleep(5)
     print("Slept for 5 seconds----------------------------------")
 # print
