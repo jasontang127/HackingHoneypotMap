@@ -71,7 +71,7 @@ print(begin_time)
 # open event log
 
 
-
+maxFreq = 0
 while True:
     hand = win32evtlog.OpenEventLog(computer, logtype)
     events = win32evtlog.ReadEventLog(hand, flags, 0, 8192)
@@ -79,51 +79,88 @@ while True:
     if len(events) > 0:
         maxID = events[0].RecordNumber
         try:
+            freqLogFile = open("freqLogFile.txt", "r")
+            freqLog = json.loads(freqLogFile.read())
+            freqLogFile.close()
+            freqLogFile = open("freqLogFile.txt", "w")
+        except FileNotFoundError:
+            print("freqLogFile doesn't exist, writing it now")
+            freqLogFile = open("freqLogFile.txt", "w")
+            freqLog = {}
+        try:
             maxIDFile = open("maxIDFile.txt", "r")
             prevMaxID = int(maxIDFile.readline())
             print("Prev max ID: " + str(prevMaxID))
-        except FileNotFoundError:
-            print("File doesn't exist, writing it now")
+        except FileNotFoundError:  # first time running
+            print("maxIDFile doesn't exist, writing it now")
             prevMaxID = -1
         finally:
             reachedMax = maxID <= prevMaxID
-            if reachedMax is False:
+            if reachedMax is False:  # new entries since last log
                 maxIDFile = open("maxIDFile.txt", "w")
-                jsonLogFile = open("jsonLogFile.txt", "a")
                 maxIDFile.write(str(maxID))
                 maxIDFile.close()
 
-    while len(events) > 0 and (reachedMax is False):
-        for item in events:
-            print("Item record number: " + str(item.RecordNumber))
-            if item.RecordNumber <= prevMaxID:
-                reachedMax = True
-                print("Reached previous max ID")
-                break
-            else:
-                if item.EventID == 4625:
-                    print(f"Event time generated: " + str(item.TimeGenerated))
-                    print("Time since today: " + str(begin_time - item.TimeGenerated.date()))
-                    print(f"Event computer name: " + str(item.ComputerName))
-                    ip = str(item.StringInserts[19])
-                    print(f"IP address: " + ip)
-                    response = requests.get(
-                        "https://ipgeolocation.abstractapi.com/v1/?api_key=" + api_key + "&ip_address=" + ip)
-                    data_list = json.loads(response.content)
-                    country = data_list["country"]
-                    longitude = data_list["longitude"]
-                    latitude = data_list["latitude"]
-                    print("Country: " + str(country))
-                    print("Longitude: " + str(longitude))
-                    print("Latitude: " + str(latitude))
-                    print()
-                    json_file = json.dumps({"IP address": ip, "Country": country, "Longitude": longitude, "Latitude": latitude})
-                    print(json_file)
-                    jsonLogFile.write(str(json_file) + "\n")
-                    time.sleep(1)
-                    print("Slept for 1 seconds")
-        events = win32evtlog.ReadEventLog(hand, flags, 0, 8192)
-    jsonLogFile.close()
+                jsonLogFile = open("jsonLogFile.txt", "a")
+
+                while len(events) > 0 and (reachedMax is False):
+                    for item in events:
+                        # print("Item record number: " + str(item.RecordNumber))
+                        if item.RecordNumber <= prevMaxID:
+                            reachedMax = True
+                            print("Reached previous max ID")
+                            break
+                        else:
+                            if item.EventID == 4625:
+                                print(f"Event time generated: " + str(item.TimeGenerated))
+                                print("Time since today: " + str(begin_time - item.TimeGenerated.date()))
+                                print(f"Event computer name: " + str(item.ComputerName))
+                                ip = str(item.StringInserts[19])
+                                print(f"IP address: " + ip)
+                                response = requests.get(
+                                    "https://ipgeolocation.abstractapi.com/v1/?api_key=" + api_key + "&ip_address=" + ip)
+                                data_list = json.loads(response.content)
+                                country = data_list["country"]
+                                longitude = data_list["longitude"]
+                                latitude = data_list["latitude"]
+                                print("Country: " + str(country))
+                                print("Longitude: " + str(longitude))
+                                print("Latitude: " + str(latitude))
+                                print()
+                                json_file = json.dumps(
+                                    {"IP address": ip, "Country": country, "Longitude": longitude,
+                                     "Latitude": latitude})
+                                print(json_file)
+                                jsonLogFile.write(json_file + "\n")
+
+                                if country in freqLog.keys():
+                                    print("country is in keys; maxfreq: " + str(maxFreq) + " freqLogCountry: " + str(
+                                        freqLog[country]))
+                                    freqLog.update({country: int(freqLog[country] + 1)})
+                                    if maxFreq < freqLog[country]:
+                                        maxFreq = freqLog[country]
+                                else:
+                                    freqLog.update({country: 1})
+                                print("country is in keys; maxfreq: " + str(maxFreq) + " freqLogCountry: " + str(
+                                    freqLog[country]))
+                                print(freqLog)
+                                time.sleep(1)
+                                print("Slept for 1 seconds")
+                    events = win32evtlog.ReadEventLog(hand, flags, 0, 8192)
+                if not jsonLogFile.closed:
+                    jsonLogFile.close()
+    freqLogFile.write(json.dumps(freqLog))
+    freqLogFile.close()
+
+    payloadJS = open("payload.js", "w")
+    payloadJS.write("var payload = [\n['Country','Frequency','Area Percentage'],\n")
+    print("maxFreq: " + str(maxFreq))
+    for x in freqLog:
+        payloadJS.write(
+            "['" + str(x) + "', " + str(freqLog[x]) + ", " + str((int(freqLog[x]) / int(maxFreq)) * 100) + "],\n")
+    payloadJS.write("];")
+    payloadJS.close()
+
     time.sleep(5)
     print("Slept for 5 seconds----------------------------------")
 # print
@@ -176,3 +213,13 @@ while True:
 # except:
 #     print("blah")
 #     print(traceback.print_exc(sys.exc_info()))
+
+# var payload = [
+#         ['Country', 'Frequency', 'Area Percentage'],
+#         ['France',  1, 20],
+#         ['Germany', 2, 40],
+#         ['Poland',  3, 60],
+#         ['Canada', 4, 80],
+#         ['China', 5, 100],
+#         ['Burkina Faso', 5,100]
+#      ];
