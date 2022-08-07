@@ -90,6 +90,7 @@ while True:
         try:
             maxIDFile = open("maxIDFile.txt", "r")
             prevMaxID = int(maxIDFile.readline())
+            maxFreq = int(maxIDFile.readline())
             print("Prev max ID: " + str(prevMaxID))
         except FileNotFoundError:  # first time running
             print("maxIDFile doesn't exist, writing it now")
@@ -99,7 +100,6 @@ while True:
             if reachedMax is False:  # new entries since last log
                 maxIDFile = open("maxIDFile.txt", "w")
                 maxIDFile.write(str(maxID))
-                maxIDFile.close()
 
                 jsonLogFile = open("jsonLogFile.txt", "a")
 
@@ -133,22 +133,24 @@ while True:
                                 print(json_file)
                                 jsonLogFile.write(json_file + "\n")
 
-                                if country in freqLog.keys():
+                                if str(country) in freqLog.keys():
                                     print("country is in keys; maxfreq: " + str(maxFreq) + " freqLogCountry: " + str(
-                                        freqLog[country]))
-                                    freqLog.update({country: int(freqLog[country] + 1)})
-                                    if maxFreq < freqLog[country]:
-                                        maxFreq = freqLog[country]
+                                        freqLog[str(country)]))
+                                    freqLog.update({str(country): int(freqLog[str(country)] + 1)})
+                                    if maxFreq < freqLog[str(country)]:
+                                        maxFreq = freqLog[str(country)]
                                 else:
-                                    freqLog.update({country: 1})
+                                    freqLog.update({str(country): 1})
                                 print("country is in keys; maxfreq: " + str(maxFreq) + " freqLogCountry: " + str(
-                                    freqLog[country]))
+                                    freqLog[str(country)]))
                                 print(freqLog)
                                 time.sleep(1)
                                 print("Slept for 1 seconds")
                     events = win32evtlog.ReadEventLog(hand, flags, 0, 8192)
                 if not jsonLogFile.closed:
                     jsonLogFile.close()
+                maxIDFile.write("\n"+str(maxFreq))
+                maxIDFile.close()
     freqLogFile.write(json.dumps(freqLog))
     freqLogFile.close()
 
@@ -161,8 +163,9 @@ while True:
     payloadJS.write("];")
     payloadJS.close()
 
-    time.sleep(5)
-    print("Slept for 5 seconds----------------------------------")
+    print("Sleeping for 10 minutes")
+    time.sleep(600)
+    print("Slept for 10 minutes----------------------------------")
 # print
 # logtype, ' events found in the last 8 hours since:', begin_time
 #
