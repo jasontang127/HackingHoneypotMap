@@ -163,9 +163,9 @@ while True:
     payloadJS.write("];")
     payloadJS.close()
 
-    print("Sleeping for 10 minutes")
-    time.sleep(600)
-    print("Slept for 10 minutes----------------------------------")
+    print("Sleeping for 5 minutes")
+    time.sleep(300)
+    print("Slept for 5 minutes----------------------------------")
 # print
 # logtype, ' events found in the last 8 hours since:', begin_time
 #
