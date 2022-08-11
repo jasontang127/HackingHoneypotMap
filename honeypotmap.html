@@ -1,13 +1,14 @@
 <html>
 <head>
-    <meta http-equiv="refresh" content="60">
-    <script src='./payload.js' type='text/javascript'>
+
+    <script id='payload' src='payload.js' type='text/javascript'>
     </script>
     <script src='https://www.gstatic.com/charts/loader.js' type='text/javascript'></script>
     <script type='text/javascript'>
+
+	function setupMap() {
 	var total = 0;
 	for (let a = 1; a < payload.length; a++) {
-		document.write("|" + payload[a][0] + ": " + payload[a][1] + "|\n");
 		total += payload[a][1];
 	}
 	document.write("\nTotal attacks: " + total);
@@ -15,6 +16,9 @@
         'packages': ['geochart'], 'mapsApiKey': 'AIzaSyDDmxrKDwSsc4mAjJAO1BLo02hxo36SH-4'
      });
       google.charts.setOnLoadCallback(drawMarkersMap);
+    };
+
+    setupMap();
 
      function drawMarkersMap() {
      var data = google.visualization.arrayToDataTable(payload);
@@ -26,13 +30,24 @@
         colorAxis: {colors: ['#00a806', '#e60000']} // green to red
      };
 
-     var chart = new google.visualization.GeoChart(document.getElementById('chart_div'));
+     var chartElement = document.getElementById('chart_div');
+     var chart = new google.visualization.GeoChart(chartElement);
+
      chart.draw(data, options);
     };
+    </script>
+
+    <script type='text/javascript'>
+        function refreshPayload() {
+            document.getElementById("payload").src = "payload.js?random=" + new Date().getTime();
+            drawMarkersMap();
+            //research reload html src img
+        }
     </script>
 
 </head>
 <body>
 <div id="chart_div" style="width: 900px; height: 500px;"></div>
+    <button onclick="refreshPayload()">Refresh Payload.js</button>
 </body>
 </html>
