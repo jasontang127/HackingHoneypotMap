@@ -1,23 +1,38 @@
 <html>
 <head>
-    <meta http-equiv="refresh" content="60">
-    <script src='./payload.js' type='text/javascript'>
+
+    <script src='https://www.gstatic.com/charts/loader.js' type='text/javascript'>
     </script>
-    <script src='https://www.gstatic.com/charts/loader.js' type='text/javascript'></script>
+    <script id='payload' src='payload.js' type='text/javascript'>
+    </script>
+
+
+    <p id="total"></p>
+
     <script type='text/javascript'>
-	var total = 0;
-	for (let a = 1; a < payload.length; a++) {
-		document.write("|" + payload[a][0] + ": " + payload[a][1] + "|\n");
-		total += payload[a][1];
-	}
-	document.write("\nTotal attacks: " + total);
+        function refreshPayload() {
+        console.log("refreshing");
+            var head = document.getElementsByTagName('head')[0];
+            head.removeChild(document.getElementById('payload'));
+            var script = document.createElement('script');
+            script.src = "payload.js";
+            script.id = "payload";
+            script.type = "text/javascript";
+            head.appendChild(script);
+            drawMarkersMap();
+        }
+    </script>
+    <script type='text/javascript'>
+	function setupMap() {
         google.charts.load('current', {
-        'packages': ['geochart'], 'mapsApiKey': 'AIzaSyDDmxrKDwSsc4mAjJAO1BLo02hxo36SH-4'
+        'packages': ['geochart'], 'mapsApiKey': ''
      });
       google.charts.setOnLoadCallback(drawMarkersMap);
 
+        setInterval(refreshPayload, 60000);
+    };
+
      function drawMarkersMap() {
-     var data = google.visualization.arrayToDataTable(payload);
 
      var options = {
         sizeAxis: { minValue: 0, maxValue: 100 },
@@ -26,13 +41,25 @@
         colorAxis: {colors: ['#00a806', '#e60000']} // green to red
      };
 
-     var chart = new google.visualization.GeoChart(document.getElementById('chart_div'));
+    var total = 0;
+    for (let a = 1; a < payload.length; a++) {
+        total += payload[a][1];
+    }
+    document.getElementById("total").innerHTML = "Total attacks: " + total;
+
+    var data = new google.visualization.arrayToDataTable(payload);
+    var chartElement = document.getElementById('chart_div');
+    var chart = new google.visualization.GeoChart(chartElement);
+
      chart.draw(data, options);
     };
+
+    setupMap();
     </script>
 
 </head>
 <body>
 <div id="chart_div" style="width: 900px; height: 500px;"></div>
+<button onclick="refreshPayload()">Refresh Payload.js</button>
 </body>
 </html>
