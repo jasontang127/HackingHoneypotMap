@@ -7,7 +7,7 @@ import requests
 import win32con
 import win32evtlog
 
-api_key = "c3b596ba6ab7401b9eef629eae5606ff"
+api_key = ""
 
 ####Main program
 
@@ -63,7 +63,7 @@ while True:
 
                 jsonLogFile = open("jsonLogFile.txt", "a")
 
-                while len(events) > 0 and (reachedMax is False):
+                while len(events) > 0 and (reachedMax is False): # read each log until either end of history or previous max
                     for item in events:
                         # print("Item record number: " + str(item.RecordNumber))
                         if item.RecordNumber <= prevMaxID:
@@ -71,7 +71,7 @@ while True:
                             print("Reached previous max ID")
                             break
                         else:
-                            if item.EventID == 4625:
+                            if item.EventID == 4625: # failed RDP login
                                 print(f"Event time generated: " + str(item.TimeGenerated))
                                 print("Time since today: " + str(begin_time - item.TimeGenerated.date()))
                                 print(f"Event computer name: " + str(item.ComputerName))
