@@ -26,13 +26,14 @@ computer = 'localhost'
 
 logtype = 'Security'
 
-begin_time = date.today()
-print(begin_time)
+
 # open event log
 
 
-maxFreq = 0
+maxFreq = 1
 while True:
+    begin_time = date.today()
+    print(begin_time)
     hand = win32evtlog.OpenEventLog(computer, logtype)
     events = win32evtlog.ReadEventLog(hand, flags, 0, 8192)
     print("Getting batch of logs " + str(len(events)))
@@ -63,7 +64,7 @@ while True:
 
                 jsonLogFile = open("jsonLogFile.txt", "a")
 
-                while len(events) > 0 and (reachedMax is False): # read each log until either end of history or previous max
+                while len(events) > 0 and (reachedMax is False):  # read each log until either end of history or previous max
                     for item in events:
                         # print("Item record number: " + str(item.RecordNumber))
                         if item.RecordNumber <= prevMaxID:
@@ -71,9 +72,13 @@ while True:
                             print("Reached previous max ID")
                             break
                         else:
-                            if item.EventID == 4625: # failed RDP login
+                            if item.EventID == 4625:  # failed RDP login
                                 print(f"Event time generated: " + str(item.TimeGenerated))
-                                print("Time since today: " + str(begin_time - item.TimeGenerated.date()))
+                                timediff = begin_time - item.TimeGenerated.date()
+                                if not str(timediff)[0] == '0':
+                                    print("Record is a day old, stop here")
+                                    break
+                                print("Time since today: " + str(timediff))
                                 print(f"Event computer name: " + str(item.ComputerName))
                                 ip = str(item.StringInserts[19])
                                 print(f"IP address: " + ip)
@@ -99,9 +104,11 @@ while True:
                                     freqLog.update({str(country): int(freqLog[str(country)] + 1)})
                                     if maxFreq < freqLog[str(country)]:
                                         maxFreq = freqLog[str(country)]
-                                else:
+                                elif country is not None:
                                     freqLog.update({str(country): 1})
-                                print("country is in keys; maxfreq: " + str(maxFreq) + " freqLogCountry: " + str(
+                                else:
+                                    pass
+                                print("after country is in keys; maxfreq: " + str(maxFreq) + " freqLogCountry: " + str(
                                     freqLog[str(country)]))
                                 print(freqLog)
                                 time.sleep(1)
