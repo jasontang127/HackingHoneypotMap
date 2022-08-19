@@ -8,7 +8,7 @@ import win32con
 import win32evtlog
 
 api_key = ""
-
+#
 ####Main program
 
 # initialize variables
@@ -29,9 +29,9 @@ logtype = 'Security'
 
 # open event log
 
-
 maxFreq = 1
 while True:
+    updated = False
     begin_time = date.today()
     print(begin_time)
     hand = win32evtlog.OpenEventLog(computer, logtype)
@@ -43,10 +43,9 @@ while True:
             freqLogFile = open("freqLogFile.txt", "r")
             freqLog = json.loads(freqLogFile.read())
             freqLogFile.close()
-            freqLogFile = open("freqLogFile.txt", "w")
         except FileNotFoundError:
             print("freqLogFile doesn't exist, writing it now")
-            freqLogFile = open("freqLogFile.txt", "w")
+            freqLogFile = open("freqLogFile.txt", "a")
             freqLog = {}
         try:
             maxIDFile = open("maxIDFile.txt", "r")
@@ -84,32 +83,30 @@ while True:
                                 print(f"IP address: " + ip)
                                 response = requests.get(
                                     "https://ipgeolocation.abstractapi.com/v1/?api_key=" + api_key + "&ip_address=" + ip)
-                                data_list = json.loads(response.content)
-                                country = data_list["country"]
-                                longitude = data_list["longitude"]
-                                latitude = data_list["latitude"]
-                                print("Country: " + str(country))
-                                print("Longitude: " + str(longitude))
-                                print("Latitude: " + str(latitude))
-                                print()
-                                json_file = json.dumps(
-                                    {"IP address": ip, "Country": country, "Longitude": longitude,
-                                     "Latitude": latitude})
-                                print(json_file)
-                                jsonLogFile.write(json_file + "\n")
-
-                                if str(country) in freqLog.keys():
-                                    print("country is in keys; maxfreq: " + str(maxFreq) + " freqLogCountry: " + str(
-                                        freqLog[str(country)]))
-                                    freqLog.update({str(country): int(freqLog[str(country)] + 1)})
-                                    if maxFreq < freqLog[str(country)]:
-                                        maxFreq = freqLog[str(country)]
-                                elif country is not None:
-                                    freqLog.update({str(country): 1})
-                                else:
+                                try:
+                                    data_list = json.loads(response.content)
+                                    country = data_list["country"]
+                                    longitude = data_list["longitude"]
+                                    latitude = data_list["latitude"]
+                                    print("Country: " + str(country))
+                                    print("Longitude: " + str(longitude))
+                                    print("Latitude: " + str(latitude))
+                                    print()
+                                    json_file = json.dumps(
+                                        {"IP address": ip, "Country": country, "Longitude": longitude,
+                                         "Latitude": latitude})
+                                    print(json_file)
+                                    jsonLogFile.write(json_file + "\n")
+                                    if str(country) in freqLog.keys():  # country already exists in log
+                                        freqLog.update({str(country): int(freqLog[str(country)] + 1)})
+                                        if maxFreq < freqLog[str(country)]:
+                                            maxFreq = freqLog[str(country)]
+                                    elif country is not None:  # adding country to log
+                                        freqLog.update({str(country): 1})
+                                    updated = True
+                                except KeyError:
+                                    print("API error, passing")
                                     pass
-                                print("after country is in keys; maxfreq: " + str(maxFreq) + " freqLogCountry: " + str(
-                                    freqLog[str(country)]))
                                 print(freqLog)
                                 time.sleep(1)
                                 print("Slept for 1 seconds")
@@ -118,13 +115,19 @@ while True:
                     jsonLogFile.close()
                 maxIDFile.write("\n"+str(maxFreq))
                 maxIDFile.close()
-    freqLogFile.write(json.dumps(freqLog))
-    freqLogFile.close()
 
-    payloadJS = open("payload.js", "w")
+    # if freqLogFile updated, reset freqLogFile and update with freqLog
+    if updated is True:
+        print("New attacks, updating freqLogFile")
+        freqLogFile = open("freqLogFile.txt", "w").close()  # resetting file to overwrite
+        freqLogFile = open("freqLogFile.txt", "w")
+        freqLogFile.write(json.dumps(freqLog))  # write to freqLogFile using freqLog dictionary
+        freqLogFile.close()
+
+    payloadJS = open("payload.js", "w")  # writing javascript payload to be used in HTML page
     payloadJS.write("var payload = [\n['Country','Frequency','Area Percentage'],\n")
     print("maxFreq: " + str(maxFreq))
-    for x in freqLog:
+    for x in freqLog:  # write to javascript payload by looping through freqLog dictionary
         payloadJS.write(
             "['" + str(x) + "', " + str(freqLog[x]) + ", " + str((int(freqLog[x]) / int(maxFreq)) * 100) + "],\n")
     payloadJS.write("];")
