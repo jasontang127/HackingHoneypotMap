@@ -7,7 +7,7 @@ import requests
 import win32con
 import win32evtlog
 
-api_key = ""
+api_key = "c3b596ba6ab7401b9eef629eae5606ff"
 #
 ####Main program
 
@@ -91,7 +91,6 @@ while True:
                                     print("Country: " + str(country))
                                     print("Longitude: " + str(longitude))
                                     print("Latitude: " + str(latitude))
-                                    print()
                                     json_file = json.dumps(
                                         {"IP address": ip, "Country": country, "Longitude": longitude,
                                          "Latitude": latitude})
@@ -110,12 +109,15 @@ while True:
                                 print(freqLog)
                                 time.sleep(1)
                                 print("Slept for 1 seconds")
+                                print()
                     events = win32evtlog.ReadEventLog(hand, flags, 0, 8192)
                 if not jsonLogFile.closed:
                     jsonLogFile.close()
                 maxIDFile.write("\n"+str(maxFreq))
                 maxIDFile.close()
 
+    print("Max ID: " + str(maxID))
+    
     # if freqLogFile updated, reset freqLogFile and update with freqLog
     if updated is True:
         print("New attacks, updating freqLogFile")
