@@ -20,20 +20,24 @@
             script.type = "text/javascript";
             head.appendChild(script);
             drawMarkersMap();
+		console.log("end of refreshing");
         }
     </script>
     <script type='text/javascript'>
 	function setupMap() {
+	console.log("Setting up map");
         google.charts.load('current', {
         'packages': ['geochart'], 'mapsApiKey': 'AIzaSyDDmxrKDwSsc4mAjJAO1BLo02hxo36SH-4'
      });
+	console.log("Charts load done");
       google.charts.setOnLoadCallback(drawMarkersMap);
-
+	console.log("Setting callback done");
         setInterval(refreshPayload, 60000);
+	console.log("Setting sleep done");
     };
 
      function drawMarkersMap() {
-
+	console.log("Starting drawmap");
      var options = {
         sizeAxis: { minValue: 0, maxValue: 100 },
         region: 'world',
@@ -50,9 +54,10 @@
     var data = new google.visualization.arrayToDataTable(payload);
     var chartElement = document.getElementById('chart_div');
     var chart = new google.visualization.GeoChart(chartElement);
-
+	console.log("Before chart draw");
      chart.draw(data, options);
-    };
+  	console.log("After chart draw");
+	};
 
     setupMap();
     </script>

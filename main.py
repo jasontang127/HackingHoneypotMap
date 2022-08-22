@@ -48,14 +48,15 @@ while True:
             freqLogFile = open("freqLogFile.txt", "a")
             freqLog = {}
         try:
-            maxIDFile = open("maxIDFile.txt", "r")
+            maxIDFile = open("maxIDFile.txt", "r") # make maxFreq its own file
             prevMaxID = int(maxIDFile.readline())
             maxFreq = int(maxIDFile.readline())
+            # close file
             print("Prev max ID: " + str(prevMaxID))
         except FileNotFoundError:  # first time running
             print("maxIDFile doesn't exist, writing it now")
             prevMaxID = -1
-        finally:
+        finally: # no need for finally block
             reachedMax = maxID <= prevMaxID
             if reachedMax is False:  # new entries since last log
                 maxIDFile = open("maxIDFile.txt", "w")
@@ -74,9 +75,6 @@ while True:
                             if item.EventID == 4625:  # failed RDP login
                                 print(f"Event time generated: " + str(item.TimeGenerated))
                                 timediff = begin_time - item.TimeGenerated.date()
-                                if not str(timediff)[0] == '0':
-                                    print("Record is a day old, stop here")
-                                    break
                                 print("Time since today: " + str(timediff))
                                 print(f"Event computer name: " + str(item.ComputerName))
                                 ip = str(item.StringInserts[19])
@@ -120,9 +118,8 @@ while True:
     
     # if freqLogFile updated, reset freqLogFile and update with freqLog
     if updated is True:
-        print("New attacks, updating freqLogFile")
-        freqLogFile = open("freqLogFile.txt", "w").close()  # resetting file to overwrite
-        freqLogFile = open("freqLogFile.txt", "w")
+        print("New attacks, updating freqLogFile")  
+        freqLogFile = open("freqLogFile.txt", "w")  # resetting file to overwrite
         freqLogFile.write(json.dumps(freqLog))  # write to freqLogFile using freqLog dictionary
         freqLogFile.close()
 
