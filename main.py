@@ -27,7 +27,42 @@ computer = 'localhost'
 logtype = 'Security'
 
 
+def callGeolocAPI(ipAddress):
+    global updated
+    global maxFreq
+    global freqLog
+    response = requests.get(
+        "https://ipgeolocation.abstractapi.com/v1/?api_key=" + api_key + "&ip_address=" + ipAddress)
+    try:
+        data_list = json.loads(response.content)
+        country = data_list["country"]
+        longitude = data_list["longitude"]
+        latitude = data_list["latitude"]
+        print("Country: " + str(country))
+        print("Longitude: " + str(longitude))
+        print("Latitude: " + str(latitude))
+        json_file = json.dumps(
+            {"IP address": ip, "Country": country, "Longitude": longitude,
+             "Latitude": latitude})
+        print(json_file)
+        # jsonLogFile.write(json_file + "\n")
+        if str(country) in freqLog.keys():  # country already exists in log
+            freqLog.update({str(country): int(freqLog[str(country)] + 1)})
+            if maxFreq < freqLog[str(country)]:
+                maxFreq = freqLog[str(country)]
+        elif country is not None:  # adding country to log
+            freqLog.update({str(country): 1})
+        updated = True
+    except KeyError:
+        print("API error, passing")
+        pass
+    print(freqLog)
+    time.sleep(1)
+    print("Slept for 1 seconds")
+    print()
+
 # open event log
+
 
 maxFreq = 1
 while True:
@@ -48,74 +83,57 @@ while True:
             freqLogFile = open("freqLogFile.txt", "a")
             freqLog = {}
         try:
-            maxIDFile = open("maxIDFile.txt", "r") # make maxFreq its own file
+            maxIDFile = open("maxIDFile.txt", "r")  # make maxFreq its own file
             prevMaxID = int(maxIDFile.readline())
-            maxFreq = int(maxIDFile.readline())
             # close file
             print("Prev max ID: " + str(prevMaxID))
         except FileNotFoundError:  # first time running
             print("maxIDFile doesn't exist, writing it now")
             prevMaxID = -1
-        finally: # no need for finally block
-            reachedMax = maxID <= prevMaxID
-            if reachedMax is False:  # new entries since last log
-                maxIDFile = open("maxIDFile.txt", "w")
-                maxIDFile.write(str(maxID))
+        try:
+            maxFreqFile = open("maxFreqFile.txt", "r")
+            maxFreq = int(maxFreqFile.readline())
+            maxFreqFile.close()
+            print("Max freq: " + str(maxFreq))
+        except FileNotFoundError:
+            print("maxFreqFile doesn't exist, writing it now")
+            maxFreq = 0
+        reachedMax = maxID <= prevMaxID
+        if reachedMax is False:  # new entries since last log
+            maxIDFile = open("maxIDFile.txt", "w")
+            maxIDFile.write(str(maxID))
 
-                jsonLogFile = open("jsonLogFile.txt", "a")
+            # jsonLogFile = open("jsonLogFile.txt", "a")
 
-                while len(events) > 0 and (reachedMax is False):  # read each log until either end of history or previous max
-                    for item in events:
-                        # print("Item record number: " + str(item.RecordNumber))
-                        if item.RecordNumber <= prevMaxID:
-                            reachedMax = True
-                            print("Reached previous max ID")
-                            break
-                        else:
-                            if item.EventID == 4625:  # failed RDP login
-                                print(f"Event time generated: " + str(item.TimeGenerated))
-                                timediff = begin_time - item.TimeGenerated.date()
-                                print("Time since today: " + str(timediff))
-                                print(f"Event computer name: " + str(item.ComputerName))
-                                ip = str(item.StringInserts[19])
-                                print(f"IP address: " + ip)
-                                response = requests.get(
-                                    "https://ipgeolocation.abstractapi.com/v1/?api_key=" + api_key + "&ip_address=" + ip)
-                                try:
-                                    data_list = json.loads(response.content)
-                                    country = data_list["country"]
-                                    longitude = data_list["longitude"]
-                                    latitude = data_list["latitude"]
-                                    print("Country: " + str(country))
-                                    print("Longitude: " + str(longitude))
-                                    print("Latitude: " + str(latitude))
-                                    json_file = json.dumps(
-                                        {"IP address": ip, "Country": country, "Longitude": longitude,
-                                         "Latitude": latitude})
-                                    print(json_file)
-                                    jsonLogFile.write(json_file + "\n")
-                                    if str(country) in freqLog.keys():  # country already exists in log
-                                        freqLog.update({str(country): int(freqLog[str(country)] + 1)})
-                                        if maxFreq < freqLog[str(country)]:
-                                            maxFreq = freqLog[str(country)]
-                                    elif country is not None:  # adding country to log
-                                        freqLog.update({str(country): 1})
-                                    updated = True
-                                except KeyError:
-                                    print("API error, passing")
-                                    pass
-                                print(freqLog)
-                                time.sleep(1)
-                                print("Slept for 1 seconds")
-                                print()
-                    events = win32evtlog.ReadEventLog(hand, flags, 0, 8192)
-                if not jsonLogFile.closed:
-                    jsonLogFile.close()
-                maxIDFile.write("\n"+str(maxFreq))
-                maxIDFile.close()
+            while len(events) > 0 and (reachedMax is False):  # read each log until either end of history or previous max
+                for item in events:
+                    # print("Item record number: " + str(item.RecordNumber))
+                    if item.RecordNumber <= prevMaxID:
+                        reachedMax = True
+                        print("Reached previous max ID")
+                        break
+                    else:
+                        if item.EventID == 4625:  # failed RDP login
+                            timediff = begin_time - item.TimeGenerated.date()
+                            ip = str(item.StringInserts[19])
 
+                            print(f"Event time generated: " + str(item.TimeGenerated))
+                            print("Time since today: " + str(timediff))
+                            print(f"Event computer name: " + str(item.ComputerName))
+                            print(f"IP address: " + ip)
+
+                            callGeolocAPI(ip)
+
+                events = win32evtlog.ReadEventLog(hand, flags, 0, 8192)
+            # if not jsonLogFile.closed:
+            #     jsonLogFile.close()
+            maxIDFile.close()
     print("Max ID: " + str(maxID))
-    
+
+    maxFreqFile = open("maxFreqFile.txt", "w")
+    maxFreqFile.write(str(maxFreq))
+    maxFreqFile.close()
+
     # if freqLogFile updated, reset freqLogFile and update with freqLog
     if updated is True:
         print("New attacks, updating freqLogFile")  
