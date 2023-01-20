@@ -1,6 +1,6 @@
 HackingHoneypotMap
 ======
-This project tracks failed logon attempts (attacks) targeting an AWS virtual machine and displays the attempts on a worldmap; the worldmap is hosted on a site for others to see where attacks are coming from: https://ec2-18-208-44-207.compute-1.amazonaws.com/
+This project tracks failed logon attempts (attacks) targeting an AWS virtual machine and displays the attempts on a worldmap; the worldmap is hosted on a site for others to see where attacks are coming from: https://ec2-50-19-106-29.compute-1.amazonaws.com/
 
 ### Softwares/Components used:
 * Python
