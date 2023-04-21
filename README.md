@@ -23,5 +23,5 @@ This project tracks failed logon attempts (attacks) targeting an AWS virtual mac
   * Used to host the website
   
 A screenshot of the page is included below:
-![image](https://user-images.githubusercontent.com/45743962/189778581-41feec81-0f3c-43d4-8f26-80bc0de9af69.png)
+![image](https://user-images.githubusercontent.com/45743962/233748713-9a4af123-5fc3-4b01-8843-5f827aa3ad17.png)
 
