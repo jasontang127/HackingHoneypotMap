@@ -8,12 +8,12 @@ This project tracks failed logon attempts (attacks) targeting an AWS virtual mac
     * Used to read Failed RDP Logins as EventLog objects
     * EventLog object is then processed to obtain the IP address of the attacker
   * UrlLib.requests library
-    * Used to pass in the IP address of the attacker into the AbstractAPI Ip Geolocation API
+    * Used to pass in the IP address of the attacker into the ip-api.com Geolocation API
 * HTML/Javascript
   * Used to write the website displaying attacks
   * Makes use of Google Developers' GeoCharts API
   * Auto-refreshses the page to keep the site up to date with new logins
-* AbstractAPI's IP Geolocation API
+* ip-api's Geolocation API
   * Used to read an IP address and generate a geolocation (country, longitude, latitude)
 * Amazon Web Services EC2 Instance
   * Used to host the virtual machine being attacked, as well as the website displaying attacks
