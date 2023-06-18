@@ -7,8 +7,6 @@ import requests
 import win32con
 import win32evtlog
 
-api_key = "c3b596ba6ab7401b9eef629eae5606ff"
-#
 ####Main program
 
 # initialize variables
@@ -32,12 +30,12 @@ def callGeolocAPI(ipAddress):
     global maxFreq
     global freqLog
     response = requests.get(
-        "https://ipgeolocation.abstractapi.com/v1/?api_key=" + api_key + "&ip_address=" + ipAddress)
+        "http://ip-api.com/json/" + ipAddress, timeout=1) # make GET request to ip-api.com, returns json
     try:
-        data_list = json.loads(response.content)
+        data_list = json.loads(response.content) # extract json fields
         country = data_list["country"]
-        longitude = data_list["longitude"]
-        latitude = data_list["latitude"]
+        longitude = data_list["lon"]
+        latitude = data_list["lat"]
         print("Country: " + str(country))
         print("Longitude: " + str(longitude))
         print("Latitude: " + str(latitude))
@@ -45,7 +43,6 @@ def callGeolocAPI(ipAddress):
             {"IP address": ip, "Country": country, "Longitude": longitude,
              "Latitude": latitude})
         print(json_file)
-        # jsonLogFile.write(json_file + "\n")
         if str(country) in freqLog.keys():  # country already exists in log
             freqLog.update({str(country): int(freqLog[str(country)] + 1)})
             if maxFreq < freqLog[str(country)]:
@@ -58,7 +55,7 @@ def callGeolocAPI(ipAddress):
         pass
     print(freqLog)
     time.sleep(1)
-    print("Slept for 1 seconds")
+    # print("Slept for 1 seconds")
     print()
 
 # open event log
@@ -85,6 +82,8 @@ while True:
         try:
             maxIDFile = open("maxIDFile.txt", "r")  # make maxFreq its own file
             prevMaxID = int(maxIDFile.readline())
+            if prevMaxID == "": # program exited while running
+                prevMaxID = maxID
             # close file
             print("Prev max ID: " + str(prevMaxID))
         except FileNotFoundError:  # first time running
